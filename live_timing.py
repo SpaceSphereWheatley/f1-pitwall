@@ -145,7 +145,6 @@ class LiveTimingClient:
         try:
             current = data.get("CurrentLap")
             total = data.get("TotalLaps")
-            patch = {}
             state = get_state()
             session = dict(state.get("session", {}))
             if current is not None:
