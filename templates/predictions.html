@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="pred-page">
+
+    <div class="pred-header">
+        <span class="pred-title">PREDICTIONS</span>
+        <span class="pred-model-badge" id="pred-model-badge"></span>
+    </div>
+
+    <div class="pred-body">
+        <div class="pred-table-wrap">
+            <table class="pred-table" id="pred-table">
+                <thead>
+                    <tr>
+                        <th class="pred-col-pos">PRED</th>
+                        <th class="pred-col-driver">DRIVER</th>
+                        <th class="pred-col-delta">Δ POS</th>
+                        <th class="pred-col-current">NOW</th>
+                    </tr>
+                </thead>
+                <tbody id="pred-tbody"></tbody>
+            </table>
+            <div class="pred-empty" id="pred-empty">
+                Predictions available after qualifying
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+document.addEventListener('f1:update', (e) => {
+    const { drivers, session } = e.detail;
+    renderPredictions(drivers, session);
+});
+
+function renderPredictions(drivers, session) {
+    const model = session?.prediction_model ?? null;
+    const badge = document.getElementById('pred-model-badge');
+    const tbody = document.getElementById('pred-tbody');
+    const empty = document.getElementById('pred-empty');
+
+    if (!model) {
+        badge.textContent = '';
+        badge.className = 'pred-model-badge';
+        tbody.innerHTML = '';
+        empty.style.display = '';
+        return;
+    }
+
+    badge.textContent = model;
+    badge.className = 'pred-model-badge pred-badge-' + model.split(' ')[0].toLowerCase();
+    empty.style.display = 'none';
+
+    const entries = Object.entries(drivers || {})
+        .filter(([, d]) => d.predicted_finish != null)
+        .sort(([, a], [, b]) => a.predicted_finish - b.predicted_finish);
+
+    if (entries.length === 0) {
+        tbody.innerHTML = '';
+        empty.style.display = '';
+        return;
+    }
+
+    const rows = entries.map(([abbr, d]) => {
+        const pred = d.predicted_finish;
+        const current = d.position ?? null;
+        const grid = d.grid_position ?? null;
+        // delta: positive = moved up (better), negative = dropped
+        const baseline = (model === 'LIVE' ? current : grid) ?? null;
+        let deltaHtml = '<span class="pred-delta-neutral">—</span>';
+        if (baseline != null && pred != null) {
+            const diff = baseline - pred; // positive = gained places
+            if (diff > 0) {
+                deltaHtml = `<span class="pred-delta-up">▲${diff}</span>`;
+            } else if (diff < 0) {
+                deltaHtml = `<span class="pred-delta-down">▼${Math.abs(diff)}</span>`;
+            } else {
+                deltaHtml = `<span class="pred-delta-neutral">—</span>`;
+            }
+        }
+
+        const dot = d.team_colour
+            ? `<span class="pred-team-dot" style="background:${d.team_colour}"></span>`
+            : '';
+        const currentCell = current != null ? `P${current}` : '—';
+
+        return `<tr class="pred-row" data-driver="${abbr}" data-pred="${pred}">
+            <td class="pred-col-pos">${pred}</td>
+            <td class="pred-col-driver">${dot}${abbr}</td>
+            <td class="pred-col-delta">${deltaHtml}</td>
+            <td class="pred-col-current">${currentCell}</td>
+        </tr>`;
+    });
+
+    tbody.innerHTML = rows.join('');
+}
+</script>
+
+<style>
+.pred-page {
+    padding: 1rem 1.5rem;
+    max-width: 600px;
+}
+
+.pred-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.pred-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    color: var(--text-secondary, #888);
+}
+
+.pred-model-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    padding: 0.2em 0.6em;
+    border-radius: 3px;
+    background: var(--surface-2, #2a2a2a);
+    color: var(--text-primary, #fff);
+}
+
+.pred-badge-pre-race  { background: #1e3a5f; color: #7ab8f5; }
+.pred-badge-live      { background: #1a3a1a; color: #5cb85c; }
+
+.pred-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.pred-table thead th {
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: var(--text-secondary, #888);
+    padding: 0.4rem 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border, #333);
+}
+
+.pred-row td {
+    padding: 0.45rem 0.75rem;
+    border-bottom: 1px solid var(--border-subtle, #222);
+    vertical-align: middle;
+}
+
+.pred-row:hover td { background: var(--surface-hover, #1e1e1e); }
+
+.pred-col-pos    { font-weight: 600; width: 3rem; }
+.pred-col-driver { font-family: 'JetBrains Mono', monospace; }
+.pred-col-delta  { width: 4rem; }
+.pred-col-current { width: 4rem; color: var(--text-secondary, #888); }
+
+.pred-team-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+}
+
+.pred-delta-up   { color: #5cb85c; font-weight: 600; }
+.pred-delta-down { color: #d9534f; font-weight: 600; }
+.pred-delta-neutral { color: var(--text-secondary, #888); }
+
+.pred-empty {
+    padding: 2rem 1rem;
+    color: var(--text-secondary, #888);
+    font-size: 0.85rem;
+    text-align: center;
+}
+</style>
+{% endblock %}

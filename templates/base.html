@@ -31,8 +31,9 @@
         <ul class="nav-links">
             <li><a href="/dashboard"  class="{{ 'active' if page == 'dashboard' }}">≡ Dashboard</a></li>
             <li><a href="/overview"   class="{{ 'active' if page == 'overview' }}">⬡ Overview</a></li>
-            <li><a href="/strategy"   class="{{ 'active' if page == 'strategy' }}">▦ Strategy</a></li>
-            <li><a href="/racecontrol" class="{{ 'active' if page == 'racecontrol' }}">⚑ Race Control</a></li>
+            <li><a href="/strategy"     class="{{ 'active' if page == 'strategy' }}">▦ Strategy</a></li>
+            <li><a href="/predictions"  class="{{ 'active' if page == 'predictions' }}">◎ Predictions</a></li>
+            <li><a href="/racecontrol"  class="{{ 'active' if page == 'racecontrol' }}">⚑ Race Control</a></li>
             <li><a href="/schedule"   class="{{ 'active' if page == 'schedule' }}">📅 Schedule</a></li>
             {% if user.is_admin %}
             <li><a href="/admin/users" class="{{ 'active' if page == 'admin' }}">⚙ Admin</a></li>
@@ -56,6 +57,8 @@
                 <span class="nav-icon">⬡</span>Overview</a></li>
             <li><a href="/strategy"    class="{{ 'active' if page == 'strategy' }}">
                 <span class="nav-icon">▦</span>Strategy</a></li>
+            <li><a href="/predictions" class="{{ 'active' if page == 'predictions' }}">
+                <span class="nav-icon">◎</span>Predict</a></li>
             <li><a href="/racecontrol" class="{{ 'active' if page == 'racecontrol' }}">
                 <span class="nav-icon">⚑</span>Control</a></li>
             <li><a href="/schedule"    class="{{ 'active' if page == 'schedule' }}">

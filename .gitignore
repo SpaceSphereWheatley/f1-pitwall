@@ -201,6 +201,10 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 
+# ML models
+ml/model_prerace.pkl
+ml/model_live.pkl
+
 # F1 Pitwall
 .env
 f1_cache/

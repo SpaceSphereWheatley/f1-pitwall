@@ -13,6 +13,7 @@ _state = {
         "simulated_time": None,
         "total_laps": None,
         "current_lap": None,
+        "prediction_model": None,
     },
     "weather": {
         "air_temp": None,
@@ -51,6 +52,7 @@ def reset_state() -> None:
             "simulated_time": None,
             "total_laps": None,
             "current_lap": None,
+            "prediction_model": None,
         }
         _state["weather"] = {
             "air_temp": None,

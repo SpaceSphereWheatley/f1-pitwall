@@ -93,6 +93,14 @@ async def strategy(request: Request, current_user=Depends(get_current_user_or_re
     )
 
 
+@router.get("/predictions", response_class=HTMLResponse)
+async def predictions(request: Request, current_user=Depends(get_current_user_or_redirect)):
+    return templates.TemplateResponse(
+        "predictions.html",
+        {"request": request, "user": dict(current_user), "page": "predictions"},
+    )
+
+
 @router.get("/racecontrol", response_class=HTMLResponse)
 async def racecontrol(request: Request, current_user=Depends(get_current_user_or_redirect)):
     return templates.TemplateResponse(

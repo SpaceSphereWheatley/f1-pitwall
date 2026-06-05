@@ -76,10 +76,16 @@ def get_completed_races(year: int) -> list[dict]:
     return races
 
 
-def load_session(year: int, round_number: int, session_type: str = "R") -> fastf1.core.Session | None:
+def load_session(
+    year: int,
+    round_number: int,
+    session_type: str = "R",
+    weather: bool = True,
+    messages: bool = True,
+) -> fastf1.core.Session | None:
     try:
         session = fastf1.get_session(year, round_number, session_type)
-        session.load(laps=True, telemetry=False, weather=True, messages=True)
+        session.load(laps=True, telemetry=False, weather=weather, messages=messages)
         print(f"[loader] Loaded: {session.event['EventName']} {year} — {session.name}")
         return session
     except Exception as e:

@@ -91,7 +91,6 @@ async def fetch_pit_duration(request: Request, current_user=Depends(require_admi
     state = get_state()
     session_info = state.get("session", {})
     year = session_info.get("year")
-    round_number = session_info.get("round")
     circuit = session_info.get("circuit")
 
     if not year or not circuit:
