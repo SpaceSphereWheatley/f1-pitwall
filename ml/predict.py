@@ -40,7 +40,13 @@ def predict_prerace(year: int, round_num: int) -> Optional[list[dict]]:
     df = extract_prerace_features(year, round_num, include_target=False)
     if df is None or df.empty:
         return None
-    return _infer(_prerace_bundle, df)
+    results = _infer(_prerace_bundle, df)
+    if results is None:
+        return None
+    grid_map = df.set_index("driver")["grid_position"].to_dict()
+    for r in results:
+        r["grid_position"] = int(grid_map[r["driver"]]) if r["driver"] in grid_map else None
+    return results
 
 
 def predict_live(state: dict) -> Optional[list[dict]]:

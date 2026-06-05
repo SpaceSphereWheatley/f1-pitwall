@@ -136,7 +136,6 @@ def extract_prerace_features(year: int, round_num: int, include_target: bool = T
 
         points = sum(_POINTS_MAP.get(r["positions"].get(abbr, _DNF_POSITION), 0) for r in season_hist)
 
-        laps_ratio = float("nan")
         final_pos = float("nan")
         if race is not None:
             rrow = race.results[race.results["Abbreviation"] == abbr]
@@ -147,18 +146,12 @@ def extract_prerace_features(year: int, round_num: int, include_target: bool = T
                     final_pos = p if 1 <= p <= 20 else _DNF_POSITION
                 except (TypeError, ValueError):
                     final_pos = _DNF_POSITION
-                d_laps = race.laps[race.laps["Driver"] == abbr]
-                if not d_laps.empty:
-                    total = race.laps["LapNumber"].max()
-                    done = d_laps["LapNumber"].max()
-                    laps_ratio = float(done / total) if total > 0 else float("nan")
 
         row = {
             "driver": abbr, "team": team,
             "grid_position": grid,
             "fp2_long_run_avg": fp2_avg,
             "fp2_long_run_gap": fp2_gap,
-            "laps_completed_ratio": laps_ratio,
             "season_points": points,
         }
         for i, p in enumerate(prev_s):

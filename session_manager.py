@@ -311,7 +311,13 @@ class SessionManager:
                 print("[session] PRE-RACE predictions unavailable (no model).")
                 return
             label = "PRE-RACE (LOW CONFIDENCE)" if is_low_confidence() else "PRE-RACE"
-            drivers_patch = {r["driver"]: {"predicted_finish": r["predicted_position"]} for r in results}
+            drivers_patch = {
+                r["driver"]: {
+                    "predicted_finish": r["predicted_position"],
+                    "grid_position": r.get("grid_position"),
+                }
+                for r in results
+            }
             update_state({"session": {"prediction_model": label}, "drivers": drivers_patch})
             print(f"[session] PRE-RACE predictions stored. Label: {label}")
         except Exception as e:
