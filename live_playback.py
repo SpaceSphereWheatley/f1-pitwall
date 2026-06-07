@@ -28,20 +28,10 @@ from fastf1.livetiming.data import LiveTimingData
 from live_timing import LiveTimingClient
 from state import get_state
 
-# Mirrors the .on(topic, handler) registrations in LiveTimingClient._connect
-# (live_timing.py:107-115). Kept local rather than shared so this module stays
-# fully decoupled from the SignalRClient transport it's meant to bypass.
-TOPIC_HANDLERS = {
-    "TimingData": "_handle_timing_data",
-    "TimingAppData": "_handle_timing_app_data",
-    "Position.z": "_handle_position",
-    "RaceControlMessages": "_handle_race_control",
-    "WeatherData": "_handle_weather",
-    "TrackStatus": "_handle_track_status",
-    "SessionInfo": "_handle_session_info",
-    "LapCount": "_handle_lap_count",
-    "DriverList": "_handle_driver_list",
-}
+# Single source of truth for topic -> handler mapping, shared with the live
+# feed path (LiveTimingClient._connect) so playback always exercises exactly
+# the same dispatch as a real session.
+TOPIC_HANDLERS = LiveTimingClient.MESSAGE_HANDLERS
 
 
 class LiveTimingPlayback:
