@@ -1,14 +1,51 @@
 import logging
+import os
 import threading
 import time
 from datetime import datetime, timezone
 
 import fastf1
 from fastf1.livetiming.client import SignalRClient
+from signalrcore.messages.completion_message import CompletionMessage
 
 from state import update_state, get_state
 
 logger = logging.getLogger(__name__)
+
+
+class _DispatchingSignalRClient(SignalRClient):
+    """
+    FastF1's SignalRClient connects to the live timing feed and writes raw
+    messages to a file — it has no mechanism for dispatching parsed messages
+    to callbacks while a session is running. This subclass adds that by
+    intercepting `_on_message` (which receives every message the feed sends,
+    either as an initial `CompletionMessage` snapshot of all subscribed topics
+    or as an incremental `[topic, payload, timestamp]` update) and routing
+    each `(topic, payload)` pair to a registered per-topic callback.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._topic_callbacks = {}
+
+    def on(self, topic, callback):
+        self._topic_callbacks[topic] = callback
+
+    def _on_message(self, msg):
+        if isinstance(msg, CompletionMessage):
+            for topic, payload in (msg.result or {}).items():
+                self._dispatch(topic, payload)
+        elif isinstance(msg, list) and len(msg) >= 2:
+            self._dispatch(msg[0], msg[1])
+
+    def _dispatch(self, topic, payload):
+        callback = self._topic_callbacks.get(topic)
+        if callback is None:
+            return
+        try:
+            callback(payload)
+        except Exception:
+            self.logger.exception(f"Error in handler for topic '{topic}'")
 
 
 # Map F1 compound codes to display names
@@ -39,6 +76,21 @@ class LiveTimingClient:
     Wraps FastF1 SignalRClient to stream live F1 timing data
     and write it into the shared state dict.
     """
+
+    # Maps SignalR topic names to handler method names. Registered as
+    # callbacks on the live feed in _connect, and reused by live_playback.py
+    # to replay recorded feeds through this same parsing logic.
+    MESSAGE_HANDLERS = {
+        "TimingData": "_handle_timing_data",
+        "TimingAppData": "_handle_timing_app_data",
+        "Position.z": "_handle_position",
+        "RaceControlMessages": "_handle_race_control",
+        "WeatherData": "_handle_weather",
+        "TrackStatus": "_handle_track_status",
+        "SessionInfo": "_handle_session_info",
+        "LapCount": "_handle_lap_count",
+        "DriverList": "_handle_driver_list",
+    }
 
     def __init__(self):
         self._client = None
@@ -101,18 +153,14 @@ class LiveTimingClient:
         logger.info("LiveTimingClient run loop exited")
 
     def _connect(self):
-        self._client = SignalRClient(filename=None, verbose=False)
+        # SignalRClient requires a file to write raw messages to; we don't
+        # need that copy (we parse messages live via _DispatchingSignalRClient
+        # instead), so point it at the null device.
+        self._client = _DispatchingSignalRClient(filename=os.devnull)
 
         # Register message handlers
-        self._client.on("TimingData", self._handle_timing_data)
-        self._client.on("TimingAppData", self._handle_timing_app_data)
-        self._client.on("Position.z", self._handle_position)
-        self._client.on("RaceControlMessages", self._handle_race_control)
-        self._client.on("WeatherData", self._handle_weather)
-        self._client.on("TrackStatus", self._handle_track_status)
-        self._client.on("SessionInfo", self._handle_session_info)
-        self._client.on("LapCount", self._handle_lap_count)
-        self._client.on("DriverList", self._handle_driver_list)
+        for topic, handler_name in self.MESSAGE_HANDLERS.items():
+            self._client.on(topic, getattr(self, handler_name))
 
         self._client.start()
 

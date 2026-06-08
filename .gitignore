@@ -206,6 +206,7 @@ cython_debug/
 f1_cache/
 f1_data.db
 *.db
+recordings/
 # Marimo
 marimo/_static/
 marimo/_lsp/
